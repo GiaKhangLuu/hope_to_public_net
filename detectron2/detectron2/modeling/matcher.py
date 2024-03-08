@@ -69,9 +69,9 @@ class Matcher:
 
         Returns:
             matches (Tensor[int64]): a vector of length N, where matches[i] is a matched
-                ground-truth index in [0, M)
-            match_labels (Tensor[int8]): a vector of length N, where pred_labels[i] indicates
-                whether a prediction is a true or false positive or ignored
+                ground-truth index in [0, M) of predicted box i
+            match_labels (Tensor[int8]): a vector of length N, where match_labels[i] indicates
+                whether a prediction is a true or false positive or ignored of predicted box i
         """
         assert match_quality_matrix.dim() == 2
         if match_quality_matrix.numel() == 0:

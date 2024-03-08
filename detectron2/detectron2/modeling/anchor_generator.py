@@ -39,19 +39,31 @@ class BufferList(nn.Module):
 def _create_grid_offsets(
     size: List[int], stride: int, offset: float, target_device_tensor: torch.Tensor
 ):
+    """
+    Args:
+        sizes (List[int]): Hi x Wi of feature map (grid) at level i on pyramid (FPN)
+        stride (int): total stride at level i on pyramid
+            grid_height, grid_width = size
+            stride * grid_height = img_height
+            stride * grid_width = img_width
+        offset (float): position of center point of anchor
+    """
     grid_height, grid_width = size
     shifts_x = move_device_like(
         torch.arange(offset * stride, grid_width * stride, step=stride, dtype=torch.float32),
         target_device_tensor,
-    )
+    )  # len(shifts_x) = grid_width
     shifts_y = move_device_like(
         torch.arange(offset * stride, grid_height * stride, step=stride, dtype=torch.float32),
         target_device_tensor,
-    )
+    )  # len(shifts_y) = grid_height
 
-    shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
-    shift_x = shift_x.reshape(-1)
-    shift_y = shift_y.reshape(-1)
+    assert len(shifts_x) == grid_width
+    assert len(shifts_y) == grid_height
+
+    shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)  # shift_x.shape = shift_y.shape = (grid_height, grid_width)
+    shift_x = shift_x.reshape(-1)  # shift_x.shape = (grid_height * grid_width)
+    shift_y = shift_y.reshape(-1)  # shift_y.shape = (grid_height * grid_width)
     return shift_x, shift_y
 
 
@@ -117,9 +129,14 @@ class DefaultAnchorGenerator(nn.Module):
 
         self.strides = strides
         self.num_features = len(self.strides)
-        sizes = _broadcast_params(sizes, self.num_features, "sizes")
-        aspect_ratios = _broadcast_params(aspect_ratios, self.num_features, "aspect_ratios")
-        self.cell_anchors = self._calculate_anchors(sizes, aspect_ratios)
+        sizes = _broadcast_params(sizes, self.num_features, "sizes")  # shape = (num_features, #sizes)
+        aspect_ratios = _broadcast_params(aspect_ratios, self.num_features, "aspect_ratios")  # shape = (num_features, #aspect_ratios)
+
+        # len(self.cell_anchors) = num_features 
+        # #num_cell_anchors_per_location = #sizes x #aspect_ratios
+        # self.cell_anchors[0].shape = (#num_cell_anchors_per_location, 4) (self.cell_anchors is iteration but simplify this line by writing self.cell_anchors[0] instead of list(iter(self.cell_anchors))[0])
+        # 4 means (XYXY) of the first anchor
+        self.cell_anchors = self._calculate_anchors(sizes, aspect_ratios)  
 
         self.offset = offset
         assert 0.0 <= self.offset < 1.0, self.offset
@@ -171,8 +188,13 @@ class DefaultAnchorGenerator(nn.Module):
         # buffers() not supported by torchscript. use named_buffers() instead
         buffers: List[torch.Tensor] = [x[1] for x in self.cell_anchors.named_buffers()]
         for size, stride, base_anchors in zip(grid_sizes, self.strides, buffers):
-            shift_x, shift_y = _create_grid_offsets(size, stride, self.offset, base_anchors)
-            shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
+            shift_x, shift_y = _create_grid_offsets(size, stride, self.offset, base_anchors)  # len(shift_x) = len(shift_y) = Hi x Wi
+            assert len(shift_x) == len(shift_y) == size[0] * size[1]
+
+            # shifts.shape = (Hi x Wi, 4), 4 is shifted value for x
+            # 4 is shifted value for (XYXY)
+            shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)  
+            assert tuple(shifts.shape) ==  (size[0] * size[1], 4)
 
             anchors.append((shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(-1, 4))
 
@@ -227,7 +249,11 @@ class DefaultAnchorGenerator(nn.Module):
                 where Hi, Wi are resolution of the feature map divided by anchor stride.
         """
         grid_sizes = [feature_map.shape[-2:] for feature_map in features]
-        anchors_over_all_feature_maps = self._grid_anchors(grid_sizes)
+
+        # len(anchors_over_all_feature_maps) = #features
+        # anchors_over_all_feature_maps[i].shape = (Hi x Wi x #cell_anchors, 4) 
+        anchors_over_all_feature_maps = self._grid_anchors(grid_sizes)  
+
         return [Boxes(x) for x in anchors_over_all_feature_maps]
 
 

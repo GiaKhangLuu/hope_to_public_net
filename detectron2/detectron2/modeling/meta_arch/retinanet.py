@@ -153,6 +153,10 @@ class RetinaNet(DenseDetector):
         pred_logits, pred_anchor_deltas = self._transpose_dense_predictions(
             predictions, [self.num_classes, 4]
         )
+
+        # len(anchors) = len(features)
+        # anchors[i].shape = (Hi x Wi x num_cell_anchors, 4)
+        # 4 is (XYXY)
         anchors = self.anchor_generator(features)
         gt_labels, gt_boxes = self.label_anchors(anchors, gt_instances)
         return self.losses(anchors, pred_logits, gt_labels, pred_anchor_deltas, gt_boxes)
@@ -228,12 +232,12 @@ class RetinaNet(DenseDetector):
             across feature maps. The values are the matched gt boxes for each anchor.
             Values are undefined for those anchors not labeled as foreground.
         """
-        anchors = Boxes.cat(anchors)  # Rx4
+        anchors = Boxes.cat(anchors)  # Rx4, R is the total number of anchors across feature maps (all pyramid level)
 
         gt_labels = []
         matched_gt_boxes = []
         for gt_per_image in gt_instances:
-            match_quality_matrix = pairwise_iou(gt_per_image.gt_boxes, anchors)
+            match_quality_matrix = pairwise_iou(gt_per_image.gt_boxes, anchors)  # [num_gt_instances, R]
             matched_idxs, anchor_labels = self.anchor_matcher(match_quality_matrix)
             del match_quality_matrix
 

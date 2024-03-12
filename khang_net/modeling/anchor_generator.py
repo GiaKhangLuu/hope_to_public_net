@@ -79,13 +79,24 @@ class YOLOFAnchorGenerator(nn.Module):
         super().__init__()
 
         self.stride = stride
-        self.base_anchors = self._calculate_anchors(sizes, aspect_ratio)  
+        self.list_anchors = self._calculate_anchors(sizes, aspect_ratio)  
+        # Just have anchors on one level of pyramid (SiSo) => Get the first one from buffer list
+        #self.base_anchors = self.list_anchors._buffers['0']
 
         self.offset = offset
         assert 0.0 <= self.offset < 1.0, self.offset
 
+    @property
+    def base_anchors(self):
+        """
+        Just have anchors on one level of pyramid (SiSo) => Get the 
+        first one from buffer list
+        """
+        return self.list_anchors._buffers['0']
+
     def _calculate_anchors(self, sizes, aspect_ratio):
-        return self.generate_cell_anchors(sizes, aspect_ratio)
+        cell_anchors = [self.generate_cell_anchors(sizes, aspect_ratio)]
+        return BufferList(cell_anchors)
     
     def generate_cell_anchors(self, sizes=(32, 64, 128, 256, 512), aspect_ratio=1.0):
         """

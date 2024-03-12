@@ -119,8 +119,8 @@ class YOLOF(nn.Module):
         """
         images = self.preprocess_image(batched_inputs)
         features = self.backbone(images.tensor)
-        print(features)
-        print(features.shape)
+        # Temporarily hard code this feature out
+        features = features['res5']
         predictions = self.decoder(self.encoder(features))
 
         if self.training:

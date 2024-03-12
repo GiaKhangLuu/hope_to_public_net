@@ -1,14 +1,17 @@
 from detectron2.config import LazyCall as L
-from ...modeling.meta_arch.yolof import YOLOF
 from detectron2.modeling.backbone import ResNet, BasicStem
 from detectron2.config import LazyCall as L
 from detectron2.layers import ShapeSpec
-from detectron2.modeling.anchor_generator import DefaultAnchorGenerator
+#from detectron2.modeling.anchor_generator import DefaultAnchorGenerator
 from detectron2.modeling.box_regression import Box2BoxTransform
 from detectron2.modeling.matcher import Matcher
 from detectron2.modeling.meta_arch.retinanet import RetinaNetHead
-
 from detectron2.model_zoo.configs.common.data.constants import constants
+
+from ...modeling.meta_arch.yolof import YOLOF
+from ...modeling.meta_arch.yolof_encoder import DilatedEncoder
+from ...modeling.meta_arch.yolof_decoder import YOLOFDecoder
+from ...modeling.anchor_generator import YOLOFAnchorGenerator
 
 model=L(YOLOF)(
     backbone=L(ResNet)(
@@ -17,24 +20,29 @@ model=L(YOLOF)(
             depth=50,
             stride_in_1x1=True,
             norm="FrozenBN"
-        ),
-        out_features=['res5']
+        )
     ),
-    #encoder=L(...),
-    #decoder=L(...),
-    head=L(RetinaNetHead)(
-        # Shape for each input feature map
-        input_shape=[ShapeSpec(channels=2048)],
+    encoder=L(DilatedEncoder)(
+        input_shape=ShapeSpec(channels=2048),
+        out_channels=512,
+        block_mid_channels=128, 
+        num_residual_blocks=4,
+        block_dilations=[2, 4, 6, 8],
+        norm='BN'
+    ),
+    decoder=L(YOLOFDecoder)(
+        input_shape=ShapeSpec(channels=512),
         num_classes="${..num_classes}",
-        conv_dims=[256],
-        prior_prob=0.01,
-        num_anchors=9
+        num_anchors=5,
+        cls_num_convs=2,
+        reg_num_convs=4,
+        norm='BN',
+        prior_prob=0.01
     ),
-    head_in_features=['res5'],
-    anchor_generator=L(DefaultAnchorGenerator)(
-        sizes=[[x, x * 2 ** (1.0 / 3), x * 2 ** (2.0 / 3)] for x in [128]],
-        aspect_ratios=[0.5, 1.0, 2.0],
-        strides=[32],
+    anchor_generator=L(YOLOFAnchorGenerator)(
+        sizes=[32., 64., 128., 256., 512.],
+        aspect_ratio=1.0,
+        stride=32,
         offset=0.0,
     ),
     box2box_transform=L(Box2BoxTransform)(weights=[1.0, 1.0, 1.0, 1.0]),

@@ -303,6 +303,7 @@ class YOLOF(nn.Module):
         return new
     
     def _dense_box_regression_loss(
+        self,
         anchors:Union[Boxes, torch.Tensor],
         box2box_transform: Box2BoxTransform,
         pred_anchor_deltas: torch.Tensor,
@@ -325,11 +326,13 @@ class YOLOF(nn.Module):
             smooth_l1_beta (float): beta parameter for the smooth L1 regression loss. Default to
                 use L1 loss. Only used when `box_reg_loss_type` is "smooth_l1"
         """
+        if isinstance(anchors, Boxes):
+            anchors = anchors.tensor
         if box_reg_loss_type == "smooth_l1":
             gt_anchor_deltas = [box2box_transform.get_deltas(anchors, k) for k in gt_boxes]
             gt_anchor_deltas = torch.stack(gt_anchor_deltas)  # (N, R, 4)
             loss_box_reg = smooth_l1_loss(
-                cat(pred_anchor_deltas, dim=1)[fg_mask],
+                pred_anchor_deltas[fg_mask],
                 gt_anchor_deltas[fg_mask],
                 beta=smooth_l1_beta,
                 reduction="sum",

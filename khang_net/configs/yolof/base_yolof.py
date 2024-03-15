@@ -3,8 +3,8 @@ from detectron2.modeling.backbone import ResNet, BasicStem
 from detectron2.config import LazyCall as L
 from detectron2.layers import ShapeSpec
 #from detectron2.modeling.anchor_generator import DefaultAnchorGenerator
-from detectron2.modeling.box_regression import Box2BoxTransform
-from detectron2.modeling.matcher import Matcher
+#from detectron2.modeling.box_regression import Box2BoxTransform
+#from detectron2.modeling.matcher import Matcher
 from detectron2.modeling.meta_arch.retinanet import RetinaNetHead
 from detectron2.model_zoo.configs.common.data.constants import constants
 
@@ -12,6 +12,8 @@ from ...modeling.meta_arch.yolof import YOLOF
 from ...modeling.meta_arch.yolof_encoder import DilatedEncoder
 from ...modeling.meta_arch.yolof_decoder import YOLOFDecoder
 from ...modeling.anchor_generator import YOLOFAnchorGenerator
+from ...modeling.box2box_transform import Box2BoxTransform
+from ...modeling.uniform_matcher import UniformMatcher
 
 model=L(YOLOF)(
     backbone=L(ResNet)(
@@ -40,20 +42,29 @@ model=L(YOLOF)(
         prior_prob=0.01
     ),
     anchor_generator=L(YOLOFAnchorGenerator)(
-        sizes=[32., 64., 128., 256., 512.],
-        aspect_ratio=1.0,
-        stride=32,
+        sizes=[[32, 64, 128, 256, 512]],
+        aspect_ratios=[[1.0]],
+        strides=[32],
         offset=0.0,
     ),
-    box2box_transform=L(Box2BoxTransform)(weights=[1.0, 1.0, 1.0, 1.0]),
-    anchor_matcher=L(Matcher)(
-        thresholds=[0.4, 0.5], labels=[0, -1, 1], allow_low_quality_matches=True
+    box2box_transform=L(Box2BoxTransform)(
+        weights=[1.0, 1.0, 1.0, 1.0],
+        add_ctr_clamp=True
+    ),
+    anchor_matcher=L(UniformMatcher)(
+        match_topk=4
     ),
     num_classes=80,
     focal_loss_alpha=0.25,
     focal_loss_gamma=2.0,
     pixel_mean=constants['imagenet_bgr256_mean'],
     pixel_std=constants['imagenet_bgr256_std'],
-    input_format="BGR"
+    input_format="BGR",
+    neg_ignore_thresh=0.7,
+    pos_ignore_thresh=0.15,
+    score_thresh_test=0.05,
+    topk_candidates_test=1000,
+    nms_thresh_test=0.6,
+    max_detections_per_image=100
 )
 

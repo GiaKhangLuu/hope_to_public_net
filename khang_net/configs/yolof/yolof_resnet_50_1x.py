@@ -11,3 +11,5 @@ model.backbone.freeze_at = 2
 
 train['init_checkpoint'] = "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
 train['max_iter'] = 22500
+#train['checkpointer']['period'] = 200
+#checkpointer=dict(period=5000, max_to_keep=100),  # options for PeriodicCheckpointer

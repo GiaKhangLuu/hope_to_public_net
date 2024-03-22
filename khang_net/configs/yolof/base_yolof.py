@@ -22,7 +22,8 @@ model=L(YOLOF)(
             depth=50,
             stride_in_1x1=True,
             norm="FrozenBN"
-        )
+        ),
+        #size_divisibility=32
     ),
     encoder=L(DilatedEncoder)(
         input_shape=ShapeSpec(channels=2048),

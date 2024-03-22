@@ -83,7 +83,7 @@ def add_ground_truth_to_proposals_single_image(
     # Concatenating gt_boxes with proposals requires them to have the same fields
     gt_proposal = Instances(proposals.image_size, **gt.get_fields())
     gt_proposal.pred_boxes = gt_boxes
-    gt_proposal.objectness_logits = gt_logits
+    gt_proposal.scores = gt_logits
 
     for key in proposals.get_fields().keys():
         assert gt_proposal.has(

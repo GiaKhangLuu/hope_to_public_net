@@ -4,11 +4,11 @@ from detectron2.config import LazyCall as L
 from detectron2.layers import ShapeSpec
 from detectron2.model_zoo.configs.common.data.constants import constants
 from detectron2.modeling.poolers import ROIPooler
-from detectron2.modeling.roi_heads import MaskRCNNConvUpsampleHead
 from detectron2.modeling.matcher import Matcher
 
 from khang_net.modeling.meta_arch.huflit_net import HUFLIT_Net
 from khang_net.configs.yolof.base_yolof import model as yolof
+from khang_net.modeling.mask_head import MaskRCNNConvUpsampleHead
 
 yolof.num_classes = 9
 

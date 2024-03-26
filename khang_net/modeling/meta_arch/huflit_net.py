@@ -144,6 +144,7 @@ class HUFLIT_Net(nn.Module):
         input_format: Optional[str] = None,
         vis_period: int = 0,
         proposal_append_gt = True,
+        train_yolof = False
     ):
         """
         Args:
@@ -160,6 +161,8 @@ class HUFLIT_Net(nn.Module):
         self.pooler = pooler
         self.mask_head = mask_head
         self.proposal_matcher = proposal_matcher
+
+        self.train_yolof = train_yolof
 
         self.input_format = input_format
         self.vis_period = vis_period
@@ -259,13 +262,16 @@ class HUFLIT_Net(nn.Module):
             assert "instances" in batched_inputs[0], "Instance annotations are missing in training!"
             gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
 
-            # Proposals
-            pred_logits = [permute_to_N_HWA_K(box_cls, self.yolof.num_classes)]
-            pred_anchor_deltas = [permute_to_N_HWA_K(box_delta, 4)]
+            if self.train_yolof:
+                # Proposals
+                pred_logits = [permute_to_N_HWA_K(box_cls, self.yolof.num_classes)]
+                pred_anchor_deltas = [permute_to_N_HWA_K(box_delta, 4)]
 
-            indices = self.yolof.get_ground_truth(anchors, pred_anchor_deltas, gt_instances)
-            proposal_loss = self.yolof.losses(indices, gt_instances, anchors,
-                                              pred_logits, pred_anchor_deltas)
+                indices = self.yolof.get_ground_truth(anchors, pred_anchor_deltas, gt_instances)
+                proposal_loss = self.yolof.losses(indices, gt_instances, anchors,
+                                                pred_logits, pred_anchor_deltas)
+            else:
+                proposal_loss = {}
             
             # Mask
             proposals = self.yolof.inference([box_cls], [box_delta], anchors, images.image_sizes)

@@ -2,10 +2,6 @@ from detectron2.config import LazyCall as L
 from detectron2.modeling.backbone import ResNet, BasicStem
 from detectron2.config import LazyCall as L
 from detectron2.layers import ShapeSpec
-#from detectron2.modeling.anchor_generator import DefaultAnchorGenerator
-#from detectron2.modeling.box_regression import Box2BoxTransform
-#from detectron2.modeling.matcher import Matcher
-from detectron2.modeling.meta_arch.retinanet import RetinaNetHead
 from detectron2.model_zoo.configs.common.data.constants import constants
 
 from ...modeling.meta_arch.yolof import YOLOF

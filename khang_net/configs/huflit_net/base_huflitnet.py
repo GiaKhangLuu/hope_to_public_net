@@ -38,4 +38,5 @@ model=L(HUFLIT_Net)(
     pixel_mean=constants['imagenet_bgr256_mean'],
     pixel_std=constants['imagenet_bgr256_std'],
     input_format="BGR",
+    train_yolof=False
 )

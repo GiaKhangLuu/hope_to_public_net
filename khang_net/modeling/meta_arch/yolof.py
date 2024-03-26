@@ -241,7 +241,7 @@ class YOLOF(nn.Module):
         loss_box_reg = (1 - torch.diag(generalized_box_iou(
             matched_predicted_boxes, target_boxes))).sum()
         
-        box_reg_weight = 1.5
+        #box_reg_weight = 1.5
 
         return {
             "loss_cls": loss_cls / max(1, num_foreground),

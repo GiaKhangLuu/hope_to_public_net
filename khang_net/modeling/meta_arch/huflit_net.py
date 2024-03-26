@@ -182,6 +182,9 @@ class HUFLIT_Net(nn.Module):
             self.pixel_mean.shape == self.pixel_std.shape
         ), f"{self.pixel_mean} and {self.pixel_std} have different shapes!"
 
+        from detectron2.checkpoint import DetectionCheckpointer
+        DetectionCheckpointer(self.yolof).load(self.yolof_weight)  # load a file, usually from cfg.MODEL.WEIGHTS
+
     @property
     def device(self):
         return self.pixel_mean.device
@@ -254,9 +257,6 @@ class HUFLIT_Net(nn.Module):
             #gt_instances = None
 
         #features = self.backbone(images.tensor)
-        if self.yolof_weight:
-            print('Loading yolof weight')
-            DetectionCheckpointer(self.yolof).load(self.yolof_weight)
         features = self.yolof.backbone(images.tensor)
         features = features['res5']
         box_cls, box_delta = self.yolof.decoder(self.yolof.encoder(features))

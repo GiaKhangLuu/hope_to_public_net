@@ -9,5 +9,5 @@ dataloader.train.mapper.use_instance_mask = True
 
 model.yolof.backbone.freeze_at = 2
 
-train['init_checkpoint'] = "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
+#train['init_checkpoint'] = "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
 train['max_iter'] = 22500

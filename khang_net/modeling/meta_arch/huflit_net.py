@@ -13,11 +13,10 @@ from detectron2.utils.events import get_event_storage
 from detectron2.utils.logger import log_first_n
 from detectron2.modeling.meta_arch.dense_detector import permute_to_N_HWA_K  # noqa
 from detectron2.modeling.poolers import ROIPooler
-from detectron2.modeling.roi_heads import MaskRCNNConvUpsampleHead
 from detectron2.modeling.postprocessing import detector_postprocess
-#from detectron2.modeling.proposal_generator.proposal_utils import add_ground_truth_to_proposals
 from detectron2.modeling.sampling import subsample_labels
 from detectron2.modeling.matcher import Matcher
+from detectron2.checkpoint import DetectionCheckpointer
 
 #from ..backbone import Backbone, build_backbone
 #from ..postprocessing import detector_postprocess
@@ -25,6 +24,7 @@ from detectron2.modeling.matcher import Matcher
 #from ..roi_heads import build_roi_heads
 
 from khang_net.modeling.meta_arch.yolof import YOLOF
+from khang_net.modeling.mask_head import MaskRCNNConvUpsampleHead
 
 
 def add_ground_truth_to_proposals(
@@ -144,7 +144,8 @@ class HUFLIT_Net(nn.Module):
         input_format: Optional[str] = None,
         vis_period: int = 0,
         proposal_append_gt = True,
-        train_yolof = False
+        train_yolof = False,
+        yolof_weight = None
     ):
         """
         Args:
@@ -163,6 +164,7 @@ class HUFLIT_Net(nn.Module):
         self.proposal_matcher = proposal_matcher
 
         self.train_yolof = train_yolof
+        self.yolof_weight = yolof_weight
 
         self.input_format = input_format
         self.vis_period = vis_period
@@ -252,6 +254,9 @@ class HUFLIT_Net(nn.Module):
             #gt_instances = None
 
         #features = self.backbone(images.tensor)
+        if self.yolof_weight:
+            print('Loading yolof weight')
+            DetectionCheckpointer(self.yolof).load(self.yolof_weight)
         features = self.yolof.backbone(images.tensor)
         features = features['res5']
         box_cls, box_delta = self.yolof.decoder(self.yolof.encoder(features))
@@ -270,12 +275,12 @@ class HUFLIT_Net(nn.Module):
                 indices = self.yolof.get_ground_truth(anchors, pred_anchor_deltas, gt_instances)
                 proposal_loss = self.yolof.losses(indices, gt_instances, anchors,
                                                 pred_logits, pred_anchor_deltas)
-            else:
-                proposal_loss = {}
             
-            # Mask
-            proposals = self.yolof.inference([box_cls], [box_delta], anchors, images.image_sizes)
-            proposals = self.label_and_sample_proposals(proposals, gt_instances) 
+            else:
+                # Mask
+                proposals = self.yolof.inference([box_cls], [box_delta], anchors, images.image_sizes)
+                proposals = self.label_and_sample_proposals(proposals, gt_instances) 
+                proposal_loss = {}
 
             # TODO: Need to change this logit, we dont need negative proposals so 
             # we can remove all of them before using ROI Align

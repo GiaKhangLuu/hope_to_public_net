@@ -275,12 +275,12 @@ class HUFLIT_Net(nn.Module):
                 indices = self.yolof.get_ground_truth(anchors, pred_anchor_deltas, gt_instances)
                 proposal_loss = self.yolof.losses(indices, gt_instances, anchors,
                                                 pred_logits, pred_anchor_deltas)
-            
             else:
-                # Mask
-                proposals = self.yolof.inference([box_cls], [box_delta], anchors, images.image_sizes)
-                proposals = self.label_and_sample_proposals(proposals, gt_instances) 
                 proposal_loss = {}
+
+            # Mask
+            proposals = self.yolof.inference([box_cls], [box_delta], anchors, images.image_sizes)
+            proposals = self.label_and_sample_proposals(proposals, gt_instances) 
 
             # TODO: Need to change this logit, we dont need negative proposals so 
             # we can remove all of them before using ROI Align

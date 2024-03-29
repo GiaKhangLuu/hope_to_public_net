@@ -74,6 +74,7 @@ def add_ground_truth_to_proposals_single_image(
         gt = Instances(proposals.image_size, gt_boxes=gt)
 
     gt_boxes = gt.gt_boxes
+    gt_classes = gt.gt_classes
     device = proposals.pred_boxes.device
     # Assign all ground-truth boxes an objectness logit corresponding to
     # P(object) = sigmoid(logit) =~ 1.
@@ -84,6 +85,7 @@ def add_ground_truth_to_proposals_single_image(
     gt_proposal = Instances(proposals.image_size, **gt.get_fields())
     gt_proposal.pred_boxes = gt_boxes
     gt_proposal.scores = gt_logits
+    gt_proposal.pred_classes = gt_classes
 
     for key in proposals.get_fields().keys():
         assert gt_proposal.has(
@@ -182,8 +184,8 @@ class HUFLIT_Net(nn.Module):
             self.pixel_mean.shape == self.pixel_std.shape
         ), f"{self.pixel_mean} and {self.pixel_std} have different shapes!"
 
-        from detectron2.checkpoint import DetectionCheckpointer
-        DetectionCheckpointer(self.yolof).load(self.yolof_weight)  # load a file, usually from cfg.MODEL.WEIGHTS
+        if yolof_weight:
+            DetectionCheckpointer(self.yolof).load(self.yolof_weight)  # load a file, usually from cfg.MODEL.WEIGHTS
 
     @property
     def device(self):

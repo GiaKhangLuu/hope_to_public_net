@@ -261,8 +261,12 @@ class HUFLIT_Net(nn.Module):
         #features = self.backbone(images.tensor)
         features = self.yolof.backbone(images.tensor)
         features = features['res5']
-        box_cls, box_delta = self.yolof.decoder(self.yolof.encoder(features))
-        anchors = self.yolof.anchor_generator([features])
+
+        # Pass `p5` (output from encoder) to roi pooler
+        # Temporarily hard code this now, haven't modify in config file
+        features_p5 = self.yolof.encoder(features)
+        box_cls, box_delta = self.yolof.decoder(features_p5)
+        anchors = self.yolof.anchor_generator([features_p5])
 
         if self.training:
             assert not torch.jit.is_scripting(), "Not supported"
@@ -287,7 +291,8 @@ class HUFLIT_Net(nn.Module):
             # TODO: Need to change this logit, we dont need negative proposals so 
             # we can remove all of them before using ROI Align
             proposal_boxes = [x.pred_boxes for x in proposals]
-            box_features = self.pooler([features], proposal_boxes)
+            box_features = self.pooler([features_p5], proposal_boxes)
+            del features_p5
             del features
             proposals, fg_selection_masks = select_foreground_proposals(
                 proposals, self.num_classes
@@ -305,7 +310,7 @@ class HUFLIT_Net(nn.Module):
         else:
             proposals = self.yolof.inference([box_cls], [box_delta], anchors, images.image_sizes)
             proposal_boxes = [x.pred_boxes for x in proposals]
-            box_features = self.pooler([features], proposal_boxes)
+            box_features = self.pooler([features_p5], proposal_boxes)
             results = self.mask_head(box_features, proposals)
 
             assert not torch.jit.is_scripting(), "Scripting is not supported for postprocess."
@@ -419,9 +424,9 @@ class HUFLIT_Net(nn.Module):
             proposals_with_gt.append(proposals_per_image)
 
         # Log the number of fg/bg samples that are selected for training ROI heads
-        storage = get_event_storage()
-        storage.put_scalar("roi_head/num_fg_samples", np.mean(num_fg_samples))
-        storage.put_scalar("roi_head/num_bg_samples", np.mean(num_bg_samples))
+        #storage = get_event_storage()
+        #storage.put_scalar("roi_head/num_fg_samples", np.mean(num_fg_samples))
+        #storage.put_scalar("roi_head/num_bg_samples", np.mean(num_bg_samples))
 
         return proposals_with_gt
     

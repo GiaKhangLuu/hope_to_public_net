@@ -30,6 +30,7 @@ model=L(HUFLIT_Net)(
         ),
         num_classes=yolof.num_classes,
         conv_dims=[256, 256, 256, 256, 256],
+        conv_norm="FrozenBN"
     ),
     proposal_matcher=L(Matcher)(
         thresholds=[0.5], labels=[0, 1], allow_low_quality_matches=False

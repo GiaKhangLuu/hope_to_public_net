@@ -4,9 +4,9 @@ from typing import List, Tuple
 import torch
 import torch.nn as nn
 
-from detectron2.layers import ShapeSpec
+from detectron2.layers import ShapeSpec, get_norm
 
-from ..layers.batch_norm import get_norm
+#from ..layers.batch_norm import get_norm
 
 class YOLOFDecoder(nn.Module):
     """

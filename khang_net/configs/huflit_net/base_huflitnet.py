@@ -29,7 +29,7 @@ model=L(HUFLIT_Net)(
             height=14
         ),
         num_classes=yolof.num_classes,
-        conv_dims=[256, 256, 256, 256, 256],
+        conv_dims=[512, 256, 256, 256, 256, 256],
         conv_norm="FrozenBN"
     ),
     proposal_matcher=L(Matcher)(

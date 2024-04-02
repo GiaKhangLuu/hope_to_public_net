@@ -75,14 +75,15 @@ class YOLOFDecoder(nn.Module):
         
     def _init_weight(self):
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.normal_(m.weight, mean=0, std=0.01)
-                if hasattr(m, 'bias') and m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
+            if m:
+                if isinstance(m, nn.Conv2d):
+                    nn.init.normal_(m.weight, mean=0, std=0.01)
+                    if hasattr(m, 'bias') and m.bias is not None:
+                        nn.init.constant_(m.bias, 0)
 
-            if isinstance(m, (nn.GroupNorm, nn.BatchNorm2d, nn.SyncBatchNorm)):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
+                if isinstance(m, (nn.GroupNorm, nn.BatchNorm2d, nn.SyncBatchNorm)):
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0)
 
         # Use prior in model initialization to improve stability
         bias_value = -math.log((1 - self.prior_prob) / self.prior_prob)

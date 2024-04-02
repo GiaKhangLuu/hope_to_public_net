@@ -11,7 +11,6 @@ from khang_net.configs.yolof.base_yolof import model as yolof
 from khang_net.modeling.mask_head import MaskRCNNConvUpsampleHead
 
 yolof.num_classes = 9
-yolof.encoder.norm = ""
 yolof.decoder.norm = ""
 
 model=L(HUFLIT_Net)(

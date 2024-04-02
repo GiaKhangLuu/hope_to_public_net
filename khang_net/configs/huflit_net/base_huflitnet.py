@@ -11,6 +11,8 @@ from khang_net.configs.yolof.base_yolof import model as yolof
 from khang_net.modeling.mask_head import MaskRCNNConvUpsampleHead
 
 yolof.num_classes = 9
+yolof.encoder.norm = ""
+yolof.decoder.norm = ""
 
 model=L(HUFLIT_Net)(
     yolof=yolof,
@@ -29,8 +31,8 @@ model=L(HUFLIT_Net)(
             height=14
         ),
         num_classes=yolof.num_classes,
-        conv_dims=[512, 256, 256, 256, 256, 256],
-        conv_norm="FrozenBN"
+        conv_dims=[256, 256, 256, 256, 256],
+        #conv_norm="FrozenBN"
     ),
     proposal_matcher=L(Matcher)(
         thresholds=[0.5], labels=[0, 1], allow_low_quality_matches=False

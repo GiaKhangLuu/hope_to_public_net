@@ -6,7 +6,7 @@ from fvcore.nn import sigmoid_focal_loss_jit, smooth_l1_loss
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from detectron2.layers import CycleBatchNormList, ShapeSpec, batched_nms, cat, get_norm, move_device_like
+from detectron2.layers import CycleBatchNormList, ShapeSpec, batched_nms, cat, get_norm, move_device_like, diou_loss
 from detectron2.structures import Boxes, ImageList, Instances, pairwise_iou
 from detectron2.utils.events import get_event_storage
 
@@ -238,15 +238,23 @@ class YOLOF(nn.Module):
         target_boxes = target_boxes[~pos_ignore_idx]
         matched_predicted_boxes = predicted_boxes.reshape(-1, 4)[
             src_idx[~pos_ignore_idx]]
+
+        # ----------------- GIOU -----------------
         #loss_box_reg = (1 - torch.diag(generalized_box_iou(
             #matched_predicted_boxes, target_boxes))).sum()
-        # Temporarily change to smooth_l1_loss
-        loss_box_reg = smooth_l1_loss(matched_predicted_boxes,
-                                      target_boxes,
-                                      beta=0.0,
-                                      reduction='sum')
         
-        #box_reg_weight = 1.5
+        # ----------------- L1 ------------------
+        # Temporarily change to smooth_l1_loss
+        #loss_box_reg = smooth_l1_loss(matched_predicted_boxes,
+                                      #target_boxes,
+                                      #beta=0.0,
+                                      #reduction='sum')
+        
+        # ----------------- DIOU ------------------
+        loss_box_reg = diou_loss(matched_predicted_boxes,
+                                 target_boxes,
+                                 reduction='sum')
+        
 
         return {
             "loss_cls": loss_cls / max(1, num_foreground),

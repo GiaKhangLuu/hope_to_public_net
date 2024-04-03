@@ -238,8 +238,13 @@ class YOLOF(nn.Module):
         target_boxes = target_boxes[~pos_ignore_idx]
         matched_predicted_boxes = predicted_boxes.reshape(-1, 4)[
             src_idx[~pos_ignore_idx]]
-        loss_box_reg = (1 - torch.diag(generalized_box_iou(
-            matched_predicted_boxes, target_boxes))).sum()
+        #loss_box_reg = (1 - torch.diag(generalized_box_iou(
+            #matched_predicted_boxes, target_boxes))).sum()
+        # Temporarily change to smooth_l1_loss
+        loss_box_reg = smooth_l1_loss(matched_predicted_boxes,
+                                      target_boxes,
+                                      beta=0.0,
+                                      reduction='sum')
         
         #box_reg_weight = 1.5
 

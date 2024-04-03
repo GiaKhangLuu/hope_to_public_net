@@ -17,7 +17,7 @@ model=L(HUFLIT_Net)(
     yolof=yolof,
     pooler=L(ROIPooler)(
         output_size=14,
-        scales=(1.0 / 16,),
+        scales=(1.0 / 32,),
         sampling_ratio=0,
         pooler_type="ROIAlignV2",
     ),

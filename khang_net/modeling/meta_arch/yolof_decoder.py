@@ -46,18 +46,18 @@ class YOLOFDecoder(nn.Module):
             cls_subnet.append(
                 nn.Conv2d(input_shape.channels, input_shape.channels, 
                           kernel_size=3, stride=1, padding=1))
-            norm = get_norm(norm, input_shape.channels)
-            if norm:
-                cls_subnet.append(get_norm(norm, input_shape.channels))
+            norm_layer = get_norm(norm, input_shape.channels)
+            if norm_layer:
+                cls_subnet.append(norm_layer)
             cls_subnet.append(nn.ReLU(inplace=True))
 
         for i in range(reg_num_convs):
             bbox_subnet.append(
                 nn.Conv2d(input_shape.channels, input_shape.channels, 
                           kernel_size=3, stride=1, padding=1))
-            norm = get_norm(norm, input_shape.channels)
-            if norm:
-                bbox_subnet.append(get_norm(norm, input_shape.channels))
+            norm_layer = get_norm(norm, input_shape.channels)
+            if norm_layer:
+                bbox_subnet.append(norm_layer)
             bbox_subnet.append(nn.ReLU(inplace=True))
 
         self.cls_subnet = nn.Sequential(*cls_subnet)

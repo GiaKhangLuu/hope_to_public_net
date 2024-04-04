@@ -245,15 +245,15 @@ class YOLOF(nn.Module):
         
         # ----------------- L1 ------------------
         # Temporarily change to smooth_l1_loss
-        loss_box_reg = smooth_l1_loss(matched_predicted_boxes,
-                                      target_boxes,
-                                      beta=0.0,
-                                      reduction='mean')
+        #loss_box_reg = smooth_l1_loss(matched_predicted_boxes,
+                                      #target_boxes,
+                                      #beta=0.0,
+                                      #reduction='mean')
         
         # ----------------- DIOU ------------------
-        #loss_box_reg = diou_loss(matched_predicted_boxes,
-                                 #target_boxes,
-                                 #reduction='sum')
+        loss_box_reg = diou_loss(matched_predicted_boxes,
+                                 target_boxes,
+                                 reduction='mean')
         
 
         return {

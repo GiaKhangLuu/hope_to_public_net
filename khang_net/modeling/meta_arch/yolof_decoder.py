@@ -4,9 +4,9 @@ from typing import List, Tuple
 import torch
 import torch.nn as nn
 
-from detectron2.layers import ShapeSpec
+from detectron2.layers import ShapeSpec, get_norm
 
-from ..layers.batch_norm import get_norm
+#from ..layers.batch_norm import get_norm
 
 class YOLOFDecoder(nn.Module):
     """
@@ -46,14 +46,18 @@ class YOLOFDecoder(nn.Module):
             cls_subnet.append(
                 nn.Conv2d(input_shape.channels, input_shape.channels, 
                           kernel_size=3, stride=1, padding=1))
-            cls_subnet.append(get_norm(norm, input_shape.channels))
+            norm_layer = get_norm(norm, input_shape.channels)
+            if norm_layer:
+                cls_subnet.append(norm_layer)
             cls_subnet.append(nn.ReLU(inplace=True))
 
         for i in range(reg_num_convs):
             bbox_subnet.append(
                 nn.Conv2d(input_shape.channels, input_shape.channels, 
                           kernel_size=3, stride=1, padding=1))
-            bbox_subnet.append(get_norm(norm, input_shape.channels))
+            norm_layer = get_norm(norm, input_shape.channels)
+            if norm_layer:
+                bbox_subnet.append(norm_layer)
             bbox_subnet.append(nn.ReLU(inplace=True))
 
         self.cls_subnet = nn.Sequential(*cls_subnet)
@@ -75,14 +79,15 @@ class YOLOFDecoder(nn.Module):
         
     def _init_weight(self):
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.normal_(m.weight, mean=0, std=0.01)
-                if hasattr(m, 'bias') and m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
+            if m:
+                if isinstance(m, nn.Conv2d):
+                    nn.init.normal_(m.weight, mean=0, std=0.01)
+                    if hasattr(m, 'bias') and m.bias is not None:
+                        nn.init.constant_(m.bias, 0)
 
-            if isinstance(m, (nn.GroupNorm, nn.BatchNorm2d, nn.SyncBatchNorm)):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
+                if isinstance(m, (nn.GroupNorm, nn.BatchNorm2d, nn.SyncBatchNorm)):
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0)
 
         # Use prior in model initialization to improve stability
         bias_value = -math.log((1 - self.prior_prob) / self.prior_prob)

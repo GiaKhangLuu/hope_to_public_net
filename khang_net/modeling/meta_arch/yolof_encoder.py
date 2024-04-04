@@ -3,9 +3,9 @@ from typing import List
 import torch
 import torch.nn as nn
 
-from detectron2.layers import ShapeSpec
+from detectron2.layers import ShapeSpec, get_norm
 
-from ..layers.batch_norm import get_norm
+#from ..layers.batch_norm import get_norm
 from ..nn_utils.weight_init import c2_xavier_fill 
 
 class DilatedEncoder(nn.Module):

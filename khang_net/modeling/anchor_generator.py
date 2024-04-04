@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
+import copy
 import collections
 import math
 from typing import List
@@ -13,11 +14,16 @@ class BufferList(nn.Module):
     Similar to nn.ParameterList, but for buffers
     """
 
-    def __init__(self, buffers):
-        super().__init__()
+    def __init__(self, buffers=None):
+        super(BufferList, self).__init__()
+        if buffers is not None:
+            self.extend(buffers)
+
+    def extend(self, buffers):
+        offset = len(self)
         for i, buffer in enumerate(buffers):
-            # Use non-persistent buffer so the values are not saved in checkpoint
-            self.register_buffer(str(i), buffer, persistent=False)
+            self.register_buffer(str(offset + i), buffer)
+        return self
 
     def __len__(self):
         return len(self._buffers)
@@ -26,136 +32,158 @@ class BufferList(nn.Module):
         return iter(self._buffers.values())
 
 
-def _create_grid_offsets(
-    size: List[int], stride: int, offset: float, target_device_tensor: torch.Tensor
-):
-    """
-    Args:
-        sizes (List[int]): H x W of feature map (grid) 
-        stride (int): total stride 
-            grid_height, grid_width = size
-            stride * grid_height = img_height
-            stride * grid_width = img_width
-        offset (float): position of center point of anchor
-    """
+def _create_grid_offsets(size, stride, offset, device):
     grid_height, grid_width = size
-    shifts_x = move_device_like(
-        torch.arange(offset * stride, grid_width * stride, step=stride, dtype=torch.float32),
-        target_device_tensor,
-    )  # len(shifts_x) = grid_width
-    shifts_y = move_device_like(
-        torch.arange(offset * stride, grid_height * stride, step=stride, dtype=torch.float32),
-        target_device_tensor,
-    )  # len(shifts_y) = grid_height
-
-    assert len(shifts_x) == grid_width
-    assert len(shifts_y) == grid_height
-
-    shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)  # shift_x.shape = shift_y.shape = (grid_height, grid_width)
-    shift_x = shift_x.reshape(-1)  # shift_x.shape = (grid_height * grid_width)
-    shift_y = shift_y.reshape(-1)  # shift_y.shape = (grid_height * grid_width)
-
+    shifts_start = offset * stride
+    shifts_x = torch.arange(
+        shifts_start, grid_width * stride + shifts_start, step=stride,
+        dtype=torch.float32, device=device
+    )
+    shifts_y = torch.arange(
+        shifts_start, grid_height * stride + shifts_start, step=stride,
+        dtype=torch.float32, device=device
+    )
+    shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+    shift_x = shift_x.reshape(-1)
+    shift_y = shift_y.reshape(-1)
     return shift_x, shift_y
 
 class YOLOFAnchorGenerator(nn.Module):
     """
-    Compute anchors described in YOLOF
-    In this style, each location has total 5 anchor boxes with 
-    5 different sizes and only 1 scale on only one feature map
+    For a set of image sizes and feature maps, computes a set of anchors.
     """
 
-    box_dim: torch.jit.Final[int] = 4
-    """
-    the dimension of each anchor box.
-    """
-
-    def __init__(self, *, sizes, aspect_ratio, stride, offset=0.5):
-        """
-        This interface is experimental.
-
-        Args:
-            TODO: Write document
-        """
+    def __init__(self, sizes, aspect_ratios, strides, offset):
         super().__init__()
+        # fmt: off
+        sizes = sizes
+        self.strides  = strides
+        self.offset   = offset
 
-        self.stride = stride
-        self.list_anchors = self._calculate_anchors(sizes, aspect_ratio)  
-        # Just have anchors on one level of pyramid (SiSo) => Get the first one from buffer list
-        #self.base_anchors = self.list_anchors._buffers['0']
-
-        self.offset = offset
         assert 0.0 <= self.offset < 1.0, self.offset
 
-    @property
-    def base_anchors(self):
+        # fmt: on
         """
-        Just have anchors on one level of pyramid (SiSo) => Get the 
-        first one from buffer list
+        sizes (list[list[int]]): sizes[i] is the list of anchor sizes to use
+            for the i-th feature map. If len(sizes) == 1, then the same list of
+            anchor sizes, given by sizes[0], is used for all feature maps. Anchor
+            sizes are given in absolute lengths in units of the input image;
+            they do not dynamically scale if the input image size changes.
+        aspect_ratios (list[list[float]]): aspect_ratios[i] is the list of
+            anchor aspect ratios to use for the i-th feature map. If
+            len(aspect_ratios) == 1, then the same list of anchor aspect ratios,
+            given by aspect_ratios[0], is used for all feature maps.
+        strides (list[int]): stride of each input feature.
         """
-        return self.list_anchors._buffers['0']
 
-    def _calculate_anchors(self, sizes, aspect_ratio):
-        cell_anchors = [self.generate_cell_anchors(sizes, aspect_ratio)]
+        self.num_features = len(self.strides)
+        self.cell_anchors = self._calculate_anchors(sizes, aspect_ratios)
+
+    def _calculate_anchors(self, sizes, aspect_ratios):
+        # If one size (or aspect ratio) is specified and there are multiple feature
+        # maps, then we "broadcast" anchors of that single size (or aspect ratio)
+        # over all feature maps.
+        #if len(sizes) == 1:
+            #sizes *= self.num_features
+        #if len(aspect_ratios) == 1:
+            #aspect_ratios *= self.num_features
+        assert self.num_features == len(sizes)
+        assert self.num_features == len(aspect_ratios)
+
+        cell_anchors = [
+            self.generate_cell_anchors(s, a).float() for s, a in zip(sizes, aspect_ratios)
+        ]
+
         return BufferList(cell_anchors)
-    
-    def generate_cell_anchors(self, sizes=(32, 64, 128, 256, 512), aspect_ratio=1.0):
-        """
-        Generate a tensor storing canonical anchor boxes, which are all anchor
-        boxes of different sizes and aspect_ratios centered at (0, 0).
-        We can later build the set of anchors for a full feature map by
-        shifting and tiling these tensors (see `meth:_grid_anchors`).
 
-        Args:
-            sizes (tuple[float]):
-            aspect_ratios int:
-
-        Returns:
-            Tensor of shape (len(sizes), 4) storing anchor boxes
-                in XYXY format.
-        """
-
-        anchors = []
-        for size in sizes:
-            area = size**2.0
-            w = math.sqrt(area / aspect_ratio)
-            h = aspect_ratio * w
-            x0, y0, x1, y1 = -w / 2.0, -h / 2.0, w / 2.0, h / 2.0
-            anchors.append([x0, y0, x1, y1])
-        return torch.tensor(anchors)
-
-    def _grid_anchors(self, grid_size: List[int]):
+    @property
+    def box_dim(self):
         """
         Returns:
-            Tensor: shape (#locations x #cell_anchors) x 4
+            int: the dimension of each anchor box.
         """
+        return 4
+
+    @property
+    def num_cell_anchors(self):
+        """
+        Returns:
+            list[int]: Each int is the number of anchors at every pixel
+                location, on that feature map.
+                For example, if at every pixel we use anchors of 3 aspect
+                ratios and 5 sizes, the number of anchors is 15.
+                (See also ANCHOR_GENERATOR.SIZES and ANCHOR_GENERATOR.ASPECT_RATIOS in config)
+
+                In standard RPN models, `num_cell_anchors` on every feature map is the same.
+        """
+        return [len(cell_anchors) for cell_anchors in self.cell_anchors]
+
+    def grid_anchors(self, grid_sizes):
         anchors = []
-        shift_x, shift_y = _create_grid_offsets(grid_size, self.stride, self.offset, self.base_anchors)  # len(shift_x) = len(shift_y) = H x W
-        assert len(shift_x) == len(shift_y) == grid_size[0] * grid_size[1]
+        for size, stride, base_anchors in zip(grid_sizes, self.strides, self.cell_anchors):
+            shift_x, shift_y = _create_grid_offsets(size, stride, self.offset, base_anchors.device)
+            shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
 
-        # shifts.shape = (Hi x Wi, 4), 4 is shifted value for x
-        # 4 is shifted value for (XYXY)
-        shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)  
-        assert tuple(shifts.shape) ==  (grid_size[0] * grid_size[1], 4)
-
-        anchors = (shifts.view(-1, 1, 4) + self.base_anchors.view(1, -1, 4)).reshape(-1, 4)  # (R, 4), R is total #anchors
+            anchors.append((shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(-1, 4))
 
         return anchors
 
-
-    def forward(self, features: torch.Tensor):
+    def generate_cell_anchors(self, sizes=(32, 64, 128, 256, 512), aspect_ratios=(0.5, 1, 2)):
         """
+        Generate a tensor storing anchor boxes, which are continuous geometric rectangles
+        centered on one feature map point sample. We can later build the set of anchors
+        for the entire feature map by tiling these tensors; see `meth:grid_anchors`.
+
         Args:
-            features (Tensor): backbone feature map on which to generate anchors.
+            sizes (tuple[float]): Absolute size of the anchors in the units of the input
+                image (the input received by the network, after undergoing necessary scaling).
+                The absolute size is given as the side length of a box.
+            aspect_ratios (tuple[float]]): Aspect ratios of the boxes computed as box
+                height / width.
 
         Returns:
-            Boxes: a Boxes containing all the anchors for a feature map
-                (i.e. the cell anchors repeated over all locations in the feature map).
-                The number of anchors of feature map is H x W x num_cell_anchors,
-                where H, W are resolution of the feature map divided by anchor stride.
+            Tensor of shape (len(sizes) * len(aspect_ratios), 4) storing anchor boxes
+                in XYXY format.
         """
-        grid_size = features.shape[-2:]
 
-        # anchors_over_grid.shape = (H x W x #cell_anchors, 4) 
-        anchors_over_grid = self._grid_anchors(grid_size)  
+        # This is different from the anchor generator defined in the original Faster R-CNN
+        # code or Detectron. They yield the same AP, however the old version defines cell
+        # anchors in a less natural way with a shift relative to the feature grid and
+        # quantization that results in slightly different sizes for different aspect ratios.
+        # See also https://github.com/facebookresearch/Detectron/issues/227
 
-        return Boxes(anchors_over_grid)
+        anchors = []
+        for size in sizes:
+            area = size ** 2.0
+            for aspect_ratio in aspect_ratios:
+                # s * s = w * h
+                # a = h / w
+                # ... some algebra ...
+                # w = sqrt(s * s / a)
+                # h = a * w
+                w = math.sqrt(area / aspect_ratio)
+                h = aspect_ratio * w
+                x0, y0, x1, y1 = -w / 2.0, -h / 2.0, w / 2.0, h / 2.0
+                anchors.append([x0, y0, x1, y1])
+        return torch.tensor(anchors)
+
+    def forward(self, features):
+        """
+        Args:
+            features (list[Tensor]): list of backbone feature maps on which to generate anchors.
+
+        Returns:
+            list[list[Boxes]]: a list of #image elements. Each is a list of #feature level Boxes.
+                The Boxes contains anchors of this image on the specific feature level.
+        """
+        num_images = len(features[0])
+        grid_sizes = [feature_map.shape[-2:] for feature_map in features]
+        anchors_over_all_feature_maps = self.grid_anchors(grid_sizes)
+
+        anchors_in_image = []
+        for anchors_per_feature_map in anchors_over_all_feature_maps:
+            boxes = Boxes(anchors_per_feature_map)
+            anchors_in_image.append(boxes)
+
+        anchors = [copy.deepcopy(anchors_in_image) for _ in range(num_images)]
+        return anchors

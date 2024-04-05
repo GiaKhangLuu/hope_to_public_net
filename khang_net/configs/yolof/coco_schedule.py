@@ -18,7 +18,7 @@ def default_X_scheduler(num_X):
     """
     # total number of iterations assuming 16 batch size, using 1440000/16=90000
     total_steps_16bs = num_X * 90000
-    max_iter = 22500
+    max_iter = 90000,
     warmup_iters = 1500
 
     if num_X <= 2:
@@ -26,7 +26,7 @@ def default_X_scheduler(num_X):
             values=[1.0, 0.1, 0.01],
             # note that scheduler is scale-invariant. This is equivalent to
             # milestones=[6, 8, 9]
-            milestones=[15000, 20000, max_iter],
+            milestones=[60000, 80000, max_iter],
         )
     else:
         scheduler = L(MultiStepParamScheduler)(

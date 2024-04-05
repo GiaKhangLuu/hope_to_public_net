@@ -18,7 +18,7 @@ def default_X_scheduler(num_X):
     """
     # total number of iterations assuming 16 batch size, using 1440000/16=90000
     total_steps_16bs = num_X * 90000
-    max_iter = 90000,
+    max_iter = 90000
     warmup_iters = 1500
 
     if num_X <= 2:

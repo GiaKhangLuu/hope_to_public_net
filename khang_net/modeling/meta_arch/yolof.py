@@ -253,7 +253,7 @@ class YOLOF(nn.Module):
         # ----------------- DIOU ------------------
         loss_box_reg = diou_loss(matched_predicted_boxes,
                                  target_boxes,
-                                 reduction='mean')
+                                 reduction='sum')
         
 
         return {

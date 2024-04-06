@@ -26,79 +26,6 @@ from detectron2.checkpoint import DetectionCheckpointer
 from khang_net.modeling.meta_arch.yolof import YOLOF
 from khang_net.modeling.mask_head import MaskRCNNConvUpsampleHead
 
-
-def add_ground_truth_to_proposals(
-    gt: Union[List[Instances], List[Boxes]], proposals: List[Instances]
-) -> List[Instances]:
-    """
-    Call `add_ground_truth_to_proposals_single_image` for all images.
-
-    Args:
-        gt(Union[List[Instances], List[Boxes]): list of N elements. Element i is a Instances
-            representing the ground-truth for image i.
-        proposals (list[Instances]): list of N elements. Element i is a Instances
-            representing the proposals for image i.
-
-    Returns:
-        list[Instances]: list of N Instances. Each is the proposals for the image,
-            with field "proposal_boxes" and "objectness_logits".
-    """
-    assert gt is not None
-
-    if len(proposals) != len(gt):
-        raise ValueError("proposals and gt should have the same length as the number of images!")
-    if len(proposals) == 0:
-        return proposals
-
-    return [
-        add_ground_truth_to_proposals_single_image(gt_i, proposals_i)
-        for gt_i, proposals_i in zip(gt, proposals)
-    ]
-
-
-def add_ground_truth_to_proposals_single_image(
-    gt: Union[Instances, Boxes], proposals: Instances
-) -> Instances:
-    """
-    Augment `proposals` with `gt`.
-
-    Args:
-        Same as `add_ground_truth_to_proposals`, but with gt and proposals
-        per image.
-
-    Returns:
-        Same as `add_ground_truth_to_proposals`, but for only one image.
-    """
-    if isinstance(gt, Boxes):
-        # convert Boxes to Instances
-        gt = Instances(proposals.image_size, gt_boxes=gt)
-
-    gt_boxes = gt.gt_boxes
-    gt_classes = gt.gt_classes
-    device = proposals.pred_boxes.device
-    # Assign all ground-truth boxes an objectness logit corresponding to
-    # P(object) = sigmoid(logit) =~ 1.
-    gt_logit_value = math.log((1.0 - 1e-10) / (1 - (1.0 - 1e-10)))
-    gt_logits = gt_logit_value * torch.ones(len(gt_boxes), device=device)
-
-    # Concatenating gt_boxes with proposals requires them to have the same fields
-    gt_proposal = Instances(proposals.image_size, **gt.get_fields())
-    gt_proposal.pred_boxes = gt_boxes
-    gt_proposal.scores = gt_logits
-    gt_proposal.pred_classes = gt_classes
-
-    for key in proposals.get_fields().keys():
-        assert gt_proposal.has(
-            key
-        ), "The attribute '{}' in `proposals` does not exist in `gt`".format(key)
-
-    # NOTE: Instances.cat only use fields from the first item. Extra fields in latter items
-    # will be thrown away.
-    new_proposals = Instances.cat([proposals, gt_proposal])
-
-    return new_proposals
-
-
 def select_foreground_proposals(
     proposals: List[Instances], bg_label: int
 ) -> Tuple[List[Instances], List[torch.Tensor]]:
@@ -145,7 +72,6 @@ class HUFLIT_Net(nn.Module):
         pixel_std: Tuple[float],
         input_format: Optional[str] = None,
         vis_period: int = 0,
-        proposal_append_gt = True,
         train_yolof = False,
         yolof_weight = None
     ):
@@ -173,7 +99,6 @@ class HUFLIT_Net(nn.Module):
         if vis_period > 0:
             assert input_format is not None, "input_format is required for visualization!"
 
-        self.proposal_append_gt = proposal_append_gt
         self.num_classes = num_classes
         self.batch_size_per_image =  batch_size_per_image
         self.positive_fraction =  positive_fraction
@@ -372,20 +297,6 @@ class HUFLIT_Net(nn.Module):
 
                 Other fields such as "gt_classes", "gt_masks", that's included in `targets`.
         """
-        # Augment proposals with ground-truth boxes.
-        # In the case of learned proposals (e.g., RPN), when training starts
-        # the proposals will be low quality due to random initialization.
-        # It's possible that none of these initial
-        # proposals have high enough overlap with the gt objects to be used
-        # as positive examples for the second stage components (box head,
-        # cls head, mask head). Adding the gt boxes to the set of proposals
-        # ensures that the second stage components will have some positive
-        # examples from the start of training. For RPN, this augmentation improves
-        # convergence and empirically improves box AP on COCO by about 0.5
-        # points (under one tested configuration).
-        if self.proposal_append_gt:
-            proposals = add_ground_truth_to_proposals(targets, proposals)
-
         proposals_with_gt = []
 
         num_fg_samples = []

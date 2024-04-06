@@ -18,18 +18,18 @@ def default_X_scheduler(num_X):
     """
     # total number of iterations assuming 16 batch size, using 1440000/16=90000
     total_steps_16bs = num_X * 90000
-    max_iter = 100 # 90000 (set 30000 for kaggle)
+    max_iter =  90000 
     warmup_iters = 1500
 
     if num_X <= 2:
         scheduler = L(MultiStepParamScheduler)(
-            #values=[1.0, 0.1, 0.01],
-            ## note that scheduler is scale-invariant. This is equivalent to
-            ## milestones=[6, 8, 9]
-            #milestones=[60000, 80000, max_iter],
+            values=[1.0, 0.1, 0.01],
+            # note that scheduler is scale-invariant. This is equivalent to
+            # milestones=[6, 8, 9]
+            milestones=[60000, 80000, max_iter],
             
-            values=[1.0],
-            milestones=[max_iter],
+            #values=[1.0],
+            #milestones=[max_iter],
         )
     else:
         scheduler = L(MultiStepParamScheduler)(

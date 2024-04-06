@@ -111,8 +111,8 @@ def mask_rcnn_loss(pred_mask_logits: torch.Tensor, instances: List[Instances], v
 
     #mask_loss = F.binary_cross_entropy_with_logits(pred_mask_logits, gt_masks, reduction="mean")
     mask_loss = sigmoid_focal_loss_jit(
-        pred_mask_logits ,
-        gt_masks
+        pred_mask_logits,
+        gt_masks,
         alpha=0.25,
         gamma=2.0,
         reduction="mean",

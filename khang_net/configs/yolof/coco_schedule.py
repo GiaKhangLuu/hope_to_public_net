@@ -26,10 +26,10 @@ def default_X_scheduler(num_X):
             values=[1.0, 0.1, 0.01],
             # note that scheduler is scale-invariant. This is equivalent to
             # milestones=[6, 8, 9]
-            milestones=[60000, 80000, max_iter],
+            #milestones=[60000, 80000, max_iter],
             
-            #values=[1.0],
-            #milestones=[max_iter],
+            values=[1.0],
+            milestones=[max_iter],
         )
     else:
         scheduler = L(MultiStepParamScheduler)(

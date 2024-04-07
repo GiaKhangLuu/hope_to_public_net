@@ -23,7 +23,7 @@ def default_X_scheduler(num_X):
 
     if num_X <= 2:
         scheduler = L(MultiStepParamScheduler)(
-            values=[1.0, 0.1, 0.01],
+            #values=[1.0, 0.1, 0.01],
             # note that scheduler is scale-invariant. This is equivalent to
             # milestones=[6, 8, 9]
             #milestones=[60000, 80000, max_iter],

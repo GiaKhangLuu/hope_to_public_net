@@ -85,8 +85,8 @@ def do_train(args, cfg):
         [
             hooks.IterationTimer(),
             hooks.LRScheduler(scheduler=instantiate(cfg.lr_multiplier)),
-            hooks.PeriodicCheckpointer(checkpointer, **cfg.train.checkpointer),
-            hooks.BestCheckpointer(checkpointer, **cfg.train.best_checkpointer)
+            hooks.PeriodicCheckpointer(checkpointer, **cfg.train.checkpointer)
+            #hooks.BestCheckpointer(checkpointer, **cfg.train.best_checkpointer)
             if comm.is_main_process()
             else None,
             hooks.EvalHook(cfg.train.eval_period, lambda: do_test(cfg, model)),

@@ -2,9 +2,19 @@ pip install torch==2.2.1 torchvision==0.17.1 torchaudio==2.2.1 --index-url https
 
 python3 -m pip install -e detectron2
 
-scp -r -P 11277 giakhang@0.tcp.ap.ngrok.io:/media/giakhang/146096A860968FDA/autopilot_giakhang/dataset/cityscapes2/cityscapes .
+python3 -m pip install gdown
 
-scp -r -P 11277 giakhang@0.tcp.ap.ngrok.io:/media/giakhang/146096A860968FDA/autopilot_giakhang/weights/huflit_net_20k_iters .
+gdown 18F-uHt0MH5iSy2e7SMKRGvFcCbfuCKxA
+gdown 1Mqz_cIt8KCplKA-cYkCXoCEjoYk-MOPw
+
+unzip huflit_net_20k_iters.zip
+unzip cityscapes2.zip
+
+ln cityscapes2/cityscapes ./cityscapes
+
+#scp -r -P 11277 giakhang@0.tcp.ap.ngrok.io:/media/giakhang/146096A860968FDA/autopilot_giakhang/dataset/cityscapes2/cityscapes .
+
+#scp -r -P 11277 giakhang@0.tcp.ap.ngrok.io:/media/giakhang/146096A860968FDA/autopilot_giakhang/weights/huflit_net_20k_iters .
 
 mkdir output
 

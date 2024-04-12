@@ -79,7 +79,7 @@ cfg.model.train_yolof = True
 cfg.optimizer.params.base_lr = 0.01
 cfg.optimizer.lr = 0.01
 
-cfg.train.max_iter = 20050
+cfg.train.max_iter = 30000
 #cfg.train.init_checkpoint = './huflitnet_10k_iters/model_0009999.pth'
 
 default_setup(cfg, args)

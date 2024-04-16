@@ -18,11 +18,6 @@ from detectron2.modeling.sampling import subsample_labels
 from detectron2.modeling.matcher import Matcher
 from detectron2.checkpoint import DetectionCheckpointer
 
-#from ..backbone import Backbone, build_backbone
-#from ..postprocessing import detector_postprocess
-#from ..proposal_generator import build_proposal_generator
-#from ..roi_heads import build_roi_heads
-
 from khang_net.modeling.meta_arch.yolof import YOLOF
 from khang_net.modeling.mask_head import MaskRCNNConvUpsampleHead
 

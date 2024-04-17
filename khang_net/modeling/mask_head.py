@@ -281,7 +281,7 @@ class MaskRCNNConvUpsampleHead(BaseMaskRCNNHead, nn.Sequential):
         return ret
 
     def layers(self, x):
-        for i, layer in self.conv_norm_relus:
+        for i, layer in enumerate(self.conv_norm_relus):
             if (i > 0 and 
                 len(self.conv_norm_relus) // i == 2 and 
                 self.spatial_attention):

@@ -32,44 +32,38 @@ from detectron2.engine import default_setup
 
 from tools.lazyconfig_train_net import do_train
 
-dataset = 'cityscapes'
-annot_dir = './cityscapes/annotations'
-imgs_dir = './cityscapes'
+dataset = 'coco2017'
+annot_dir = './coco2017/annotations'
+imgs_dir = './coco2017/{}2017'
 
 for split in ['train', 'val']:
-    annot_path = os.path.join(annot_dir, f'instancesonly_filtered_gtFine_{split}.json')
+    annot_path = os.path.join(annot_dir, f'instances_{split}2017.json')
     d_name = dataset + f'_{split}'
-    register_coco_instances(d_name, {}, annot_path, imgs_dir)
+    register_coco_instances(d_name, {}, annot_path, imgs_dir.format(split))
 
+# Load dataset
+dataset_dicts = DatasetCatalog.get('coco2017_train')
+metadata = MetadataCatalog.get('coco2017_train')
 
 class Args(argparse.Namespace):
-    config_file='khang_net/configs/huflit_net/huflit_net_1x.py'
+    config_file='khang_net/configs/huflit_net/huflit_net_se_1x.py'
     eval_only=False
     num_gpus=1
     num_machines=1
-    resume=True
+    resume=False
 
 args = Args()
 
-
-cfg = LazyConfig.load("khang_net/configs/huflit_net/huflit_net_1x.py")
+cfg = LazyConfig.load("khang_net/configs/huflit_net/huflit_net_se_1x.py")
 cfg.train.device = 'cuda'
-cfg.dataloader.evaluator.dataset_name = 'cityscapes_val'
-cfg.dataloader.train.dataset.names = 'cityscapes_train'
-cfg.dataloader.test.dataset.names = 'cityscapes_val'
-cfg.dataloader.train.total_batch_size = 16
+cfg.dataloader.evaluator.dataset_name = 'coco2017_val'
+cfg.dataloader.train.dataset.names = 'coco2017_train'
+cfg.dataloader.test.dataset.names = 'coco2017_val'
+cfg.dataloader.train.total_batch_size = 32
 
-batch_on_paper = 16
-actual_batch = cfg.dataloader.train.total_batch_size
-lr_scale = actual_batch / batch_on_paper
-cfg.optimizer.lr = cfg.optimizer.lr * lr_scale
-cfg.optimizer.params.base_lr = cfg.optimizer.params.base_lr * lr_scale
-cfg.optimizer.params.bias_lr_factor = cfg.optimizer.params.bias_lr_factor * lr_scale
-cfg.optimizer.params.backbone_lr_factor = cfg.optimizer.params.backbone_lr_factor * lr_scale
-
-cfg.model.num_classes = 8
-cfg.model.yolof.num_classes = 8
-cfg.model.mask_head.num_classes = 8
+cfg.model.num_classes = 90
+cfg.model.yolof.num_classes = 90
+cfg.model.mask_head.num_classes = 90
 
 #cfg.train.eval_period = 100000
 #cfg.train.checkpointer.period = 1000
@@ -79,7 +73,7 @@ cfg.model.train_yolof = True
 cfg.optimizer.params.base_lr = 0.01
 cfg.optimizer.lr = 0.01
 
-cfg.train.max_iter = 30000
+cfg.train.max_iter = 10000
 #cfg.train.init_checkpoint = './huflitnet_10k_iters/model_0009999.pth'
 
 default_setup(cfg, args)

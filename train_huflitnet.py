@@ -61,9 +61,9 @@ cfg.dataloader.train.dataset.names = 'coco2017_train'
 cfg.dataloader.test.dataset.names = 'coco2017_val'
 cfg.dataloader.train.total_batch_size = 32
 
-cfg.model.num_classes = 90
-cfg.model.yolof.num_classes = 90
-cfg.model.mask_head.num_classes = 90
+cfg.model.num_classes = 80
+cfg.model.yolof.num_classes = 80
+cfg.model.mask_head.num_classes = 80
 
 #cfg.train.eval_period = 100000
 #cfg.train.checkpointer.period = 1000

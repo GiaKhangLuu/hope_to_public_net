@@ -59,7 +59,7 @@ cfg.train.device = 'cuda'
 cfg.dataloader.evaluator.dataset_name = 'coco2017_val'
 cfg.dataloader.train.dataset.names = 'coco2017_train'
 cfg.dataloader.test.dataset.names = 'coco2017_val'
-cfg.dataloader.train.total_batch_size = 32
+cfg.dataloader.train.total_batch_size = 16
 
 cfg.model.num_classes = 80
 cfg.model.yolof.num_classes = 80

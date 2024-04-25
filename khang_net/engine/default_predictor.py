@@ -37,11 +37,12 @@ class DefaultPredictor:
         self.cfg = cfg
         self.model = instantiate(self.cfg.model)
         self.model.eval()
+        self.model.to(self.cfg.train.device)
 
         checkpointer =  DetectionCheckpointer(self.model)
         checkpointer.load(self.cfg.train.init_checkpoint)
 
-        # Hard code this line aug = T.ResizeShortestEdge, see DefaultPredictor in detectron2 for more details
+        # Hard code this line: aug = T.ResizeShortestEdge, see DefaultPredictor in detectron2 for more details
         self.aug = instantiate(self.cfg.dataloader.test.mapper.augmentations[0])
         self.input_format = self.cfg.model.input_format
         assert self.input_format in ["RGB", "BGR"]
@@ -56,6 +57,7 @@ class DefaultPredictor:
                 the output of the model for one image only.
                 See :doc:`/tutorials/models` for details about the format.
         """
+
         with torch.no_grad():  # https://github.com/sphinx-doc/sphinx/issues/4258
             # Apply pre-processing to image.
             if self.input_format == "RGB":

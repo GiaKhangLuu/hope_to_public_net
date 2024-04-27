@@ -13,17 +13,17 @@ python3 -m pip install opencv_python
 
 python3 -m pip install gdown
 
+gdown 17GYQAUj8QUoHFszitH1wRcvp_WhVp-h5 
 gdown 1VeqhcRm4aZYiS4bWOqLtmq0pQNAkxZHR
-#gdown 1Mqz_cIt8KCplKA-cYkCXoCEjoYk-MOPw
 
-#unzip huflit_net_20k_iters.zip
+unzip huflit_net_140k_iters.zip
 unzip coco2017.zip
 
-#mkdir output
+mkdir output
 
 # Using `cp` instead of `ln`. The os may not detect symbolic files
-#cp ./huflit_net_20k_iters/last_checkpoint ./output
-#cp ./huflit_net_20k_iters/model_final.pth ./output
+cp ./huflit_net_140k_iters/last_checkpoint ./output
+cp ./huflit_net_140k_iters/model_final.pth ./output
 
 #screen -S train_first_10k
 

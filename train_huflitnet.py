@@ -50,7 +50,7 @@ class Args(argparse.Namespace):
     eval_only=False
     num_gpus=1
     num_machines=1
-    resume=False
+    resume=True
 
 args = Args()
 
@@ -65,7 +65,7 @@ cfg.model.num_classes = 80
 cfg.model.yolof.num_classes = 80
 cfg.model.mask_head.num_classes = 80
 
-#cfg.train.eval_period = 100000
+cfg.train.eval_period = 100000
 #cfg.train.checkpointer.period = 1000
 cfg.model.yolof_weight = None
 cfg.model.train_yolof = True
@@ -73,8 +73,7 @@ cfg.model.train_yolof = True
 cfg.optimizer.params.base_lr = 0.01
 cfg.optimizer.lr = 0.01
 
-cfg.train.max_iter = 10000
-#cfg.train.init_checkpoint = './huflitnet_10k_iters/model_0009999.pth'
+cfg.train.max_iter = 150000
 
 default_setup(cfg, args)
 

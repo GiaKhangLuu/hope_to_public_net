@@ -31,7 +31,7 @@ def default_X_scheduler(num_X):
             #milestones=[60000, 80000, max_iter],
             
             #values=[1.0],
-            values=[0.005],
+            values=[0.5],
             milestones=[max_iter],
         )
     else:

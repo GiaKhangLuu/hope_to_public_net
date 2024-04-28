@@ -73,7 +73,7 @@ cfg.model.train_yolof = True
 cfg.optimizer.params.base_lr = 0.01
 cfg.optimizer.lr = 0.01
 
-cfg.train.max_iter = 150000
+cfg.train.max_iter = 160000
 
 default_setup(cfg, args)
 

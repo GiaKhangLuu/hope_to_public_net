@@ -21,7 +21,7 @@ def default_X_scheduler(num_X):
     max_iter =  90000 
     warmup_iters = 1500
 
-    max_iter = 200000
+    max_iter = 300000
 
     if num_X <= 2:
         scheduler = L(MultiStepParamScheduler)(
@@ -31,7 +31,7 @@ def default_X_scheduler(num_X):
             #milestones=[60000, 80000, max_iter],
             
             #values=[1.0],
-            values=[0.005],
+            values=[0.001],
             milestones=[max_iter],
         )
     else:

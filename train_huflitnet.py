@@ -54,26 +54,26 @@ class Args(argparse.Namespace):
 
 args = Args()
 
-cfg = LazyConfig.load("khang_net/configs/huflit_net/huflit_net_se_1x.py")
-cfg.train.device = 'cuda'
+cfg = LazyConfig.load("khang_net/configs/huflit_net/huflitnet_v_57_ese_1x.py")
+cfg.train.device = 'cpu'
 cfg.dataloader.evaluator.dataset_name = 'coco2017_val'
 cfg.dataloader.train.dataset.names = 'coco2017_train'
 cfg.dataloader.test.dataset.names = 'coco2017_val'
-cfg.dataloader.train.total_batch_size = 16
+#cfg.dataloader.train.total_batch_size = 16
 
-cfg.model.num_classes = 80
-cfg.model.yolof.num_classes = 80
-cfg.model.mask_head.num_classes = 80
+#cfg.model.num_classes = 80
+#cfg.model.yolof.num_classes = 80
+#cfg.model.mask_head.num_classes = 80
 
-#cfg.train.eval_period = 100000
-#cfg.train.checkpointer.period = 1000
-cfg.model.yolof_weight = None
-cfg.model.train_yolof = True
+##cfg.train.eval_period = 100000
+##cfg.train.checkpointer.period = 1000
+#cfg.model.yolof_weight = None
+#cfg.model.train_yolof = True
 
-cfg.optimizer.params.base_lr = 0.01
-cfg.optimizer.lr = 0.01
+#cfg.optimizer.params.base_lr = 0.01
+#cfg.optimizer.lr = 0.01
 
-cfg.train.max_iter = 10000
+#cfg.train.max_iter = 10000
 #cfg.train.init_checkpoint = './huflitnet_10k_iters/model_0009999.pth'
 
 default_setup(cfg, args)

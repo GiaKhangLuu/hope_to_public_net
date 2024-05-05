@@ -20,6 +20,7 @@ from detectron2.checkpoint import DetectionCheckpointer
 
 from khang_net.modeling.meta_arch.yolof import YOLOF
 from khang_net.modeling.mask_head import MaskRCNNConvUpsampleHead
+from khang_net.modeling.backbone import ResNet, VoVNet
 
 def select_foreground_proposals(
     proposals: List[Instances], bg_label: int
@@ -180,7 +181,15 @@ class HUFLIT_Net(nn.Module):
 
         #features = self.backbone(images.tensor)
         features = self.yolof.backbone(images.tensor)
-        features = features['res5']
+
+        # Temporarily hard code this feature out
+        if isinstance(self.yolof.backbone, VoVNet):
+            features = features['stage5']
+        elif isinstance(self.yolof.backbone, ResNet):
+            features = features['res5']
+        else:
+            print("Invalid type of backbone")
+            return
 
         # Pass `p5` (output from encoder) to roi pooler
         # Temporarily hard code this now, haven't modify in config file

@@ -45,8 +45,10 @@ for split in ['train', 'val']:
 dataset_dicts = DatasetCatalog.get('coco2017_train')
 metadata = MetadataCatalog.get('coco2017_train')
 
+config_file = "khang_net/configs/huflit_net/huflitnet_v_57_ese_1x.py"
+
 class Args(argparse.Namespace):
-    config_file='khang_net/configs/huflit_net/huflit_net_se_1x.py'
+    config_file=config_file
     eval_only=False
     num_gpus=1
     num_machines=1
@@ -54,7 +56,7 @@ class Args(argparse.Namespace):
 
 args = Args()
 
-cfg = LazyConfig.load("khang_net/configs/huflit_net/huflitnet_v_57_ese_1x.py")
+cfg = LazyConfig.load(config_file)
 cfg.train.device = 'cpu'
 cfg.dataloader.evaluator.dataset_name = 'coco2017_val'
 cfg.dataloader.train.dataset.names = 'coco2017_train'

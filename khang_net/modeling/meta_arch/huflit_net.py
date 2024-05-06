@@ -68,7 +68,7 @@ class HUFLIT_Net(nn.Module):
         pixel_std: Tuple[float],
         input_format: Optional[str] = None,
         vis_period: int = 0,
-        train_yolof = False,
+        train_yolof = True,
         yolof_weight = None
     ):
         """

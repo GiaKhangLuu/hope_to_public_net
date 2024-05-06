@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, './detectron2')
+#sys.path.insert(0, './detectron2')
 
 import argparse
 import sys
@@ -45,7 +45,7 @@ for split in ['train', 'val']:
 dataset_dicts = DatasetCatalog.get('coco2017_train')
 metadata = MetadataCatalog.get('coco2017_train')
 
-config_file = "khang_net/configs/huflit_net/huflitnet_v_57_ese_1x.py"
+config_file = "khang_net/configs/huflit_net/huflitnet_r_50_se_1x.py"
 
 class Args(argparse.Namespace):
     config_file=config_file

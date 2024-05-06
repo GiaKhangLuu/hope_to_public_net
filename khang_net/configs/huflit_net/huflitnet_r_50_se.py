@@ -7,7 +7,7 @@ from detectron2.modeling.poolers import ROIPooler
 from detectron2.modeling.matcher import Matcher
 
 from khang_net.modeling.meta_arch.huflit_net import HUFLIT_Net
-from khang_net.configs.yolof.yolof_se import model as yolof
+from khang_net.configs.yolof.yolof_r_50_se import model as yolof
 from khang_net.modeling.mask_head import MaskRCNNConvUpsampleHead
 from khang_net.modeling.attention.spatial_attention import SpatialAttention
 

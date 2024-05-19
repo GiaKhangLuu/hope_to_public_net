@@ -1,5 +1,4 @@
 from detectron2.config import LazyCall as L
-from detectron2.modeling.backbone import ResNet, BasicStem
 from detectron2.config import LazyCall as L
 from detectron2.layers import ShapeSpec
 from detectron2.model_zoo.configs.common.data.constants import constants
@@ -10,16 +9,17 @@ from ...modeling.meta_arch.yolof_decoder import YOLOFDecoder
 from ...modeling.anchor_generator import YOLOFAnchorGenerator
 from ...modeling.box2box_transform import Box2BoxTransform
 from ...modeling.uniform_matcher import UniformMatcher
+from ...modeling.backbone.resnet import ResNet, BasicStem, SEBlock
 
 model=L(YOLOF)(
     backbone=L(ResNet)(
         stem=L(BasicStem)(in_channels=3, out_channels=64, norm="FrozenBN"),
         stages=L(ResNet.make_default_stages)(
-            depth=50,
+            depth=101,
             stride_in_1x1=True,
-            norm="FrozenBN"
+            norm="FrozenBN",
+            block_class=SEBlock
         ),
-        #size_divisibility=32
     ),
     encoder=L(DilatedEncoder)(
         input_shape=ShapeSpec(channels=2048),

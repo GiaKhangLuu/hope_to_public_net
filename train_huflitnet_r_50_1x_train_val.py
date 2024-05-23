@@ -45,7 +45,7 @@ for split in ['train', 'val']:
 dataset_dicts = DatasetCatalog.get('coco2017_train')
 metadata = MetadataCatalog.get('coco2017_train')
 
-config_file = "khang_net/configs/huflit_net/huflitnet_r_50_1x_train_val.py"
+config_file = "khang_net/configs/huflit_net/huflitnet_r_50_1x.py"
 
 class Args(argparse.Namespace):
     config_file=config_file
@@ -59,24 +59,12 @@ args = Args()
 cfg = LazyConfig.load(config_file)
 cfg.train.device = 'cpu'
 cfg.dataloader.evaluator.dataset_name = 'coco2017_val'
-cfg.dataloader.train.dataset.names = 'coco2017_train'
+cfg.dataloader.train.dataset.names = ('coco2017_train', 'coco2017_val')
 cfg.dataloader.test.dataset.names = 'coco2017_val'
-#cfg.dataloader.train.total_batch_size = 16
 
-#cfg.model.num_classes = 80
-#cfg.model.yolof.num_classes = 80
-#cfg.model.mask_head.num_classes = 80
-
-##cfg.train.eval_period = 100000
-##cfg.train.checkpointer.period = 1000
-#cfg.model.yolof_weight = None
-#cfg.model.train_yolof = True
-
-#cfg.optimizer.params.base_lr = 0.01
-#cfg.optimizer.lr = 0.01
-
-#cfg.train.max_iter = 10000
-#cfg.train.init_checkpoint = './huflitnet_10k_iters/model_0009999.pth'
+train['output_dir'] = "./output_huflitnet_r_50_1x_train_val"
+train['max_iter'] = 90000
+train['eval_period'] = 90000
 
 default_setup(cfg, args)
 

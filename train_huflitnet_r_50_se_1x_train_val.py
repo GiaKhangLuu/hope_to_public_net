@@ -62,9 +62,9 @@ cfg.dataloader.evaluator.dataset_name = 'coco2017_val'
 cfg.dataloader.train.dataset.names = ('coco2017_train', 'coco2017_val')
 cfg.dataloader.test.dataset.names = 'coco2017_val'
 
-train['output_dir'] = "./output_huflitnet_r_50_se_1x_train_val"
-train['max_iter'] = 90000
-train['eval_period'] = 90000
+cfg.train['output_dir'] = "./output_huflitnet_r_50_se_1x_train_val"
+cfg.train['max_iter'] = 90000
+cfg.train['eval_period'] = 90000
 
 default_setup(cfg, args)
 

@@ -5,11 +5,11 @@ from khang_net.configs.yolof.coco_dataloader import dataloader
 from khang_net.configs.huflit_net.huflitnet_r_101_se import model
 
 dataloader.train.mapper.use_instance_mask = True
-dataloader.train.total_batch_size = 16
+dataloader.train.total_batch_size = 10
 
 train['output_dir'] = "./output_huflitnet_r_101_se_3x"
-train['max_iter'] = 90000 * 3
-train['eval_period'] = 5000 * 3
+train['max_iter'] = 432000
+train['eval_period'] = 432000
 train['best_checkpointer']['val_metric'] = "segm/AP50"
 train['init_checkpoint'] = "detectron2://ImageNetPretrained/MSRA/R-101.pkl"
 

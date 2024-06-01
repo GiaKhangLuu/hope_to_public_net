@@ -1,5 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
-from typing import List
+from typing import List, Optional
 import fvcore.nn.weight_init as weight_init
 import torch
 from torch import nn
@@ -11,6 +11,8 @@ from detectron2.layers.wrappers import move_device_like
 from detectron2.structures import Instances
 from detectron2.utils.events import get_event_storage
 from detectron2.utils.registry import Registry
+
+from khang_net.modeling.attention.spatial_attention import SpatialAttention
 
 @torch.jit.unused
 def mask_rcnn_loss(pred_mask_logits: torch.Tensor, instances: List[Instances], vis_period: int = 0):
@@ -201,7 +203,15 @@ class MaskRCNNConvUpsampleHead(BaseMaskRCNNHead, nn.Sequential):
     """
 
     @configurable
-    def __init__(self, input_shape: ShapeSpec, *, num_classes, conv_dims, conv_norm="", **kwargs):
+    def __init__(
+        self, 
+        input_shape: ShapeSpec, 
+        *, 
+        num_classes, 
+        conv_dims, 
+        conv_norm="", 
+        spatial_attention:Optional[SpatialAttention] = None,
+        **kwargs):
         """
         NOTE: this interface is experimental.
 
@@ -218,6 +228,7 @@ class MaskRCNNConvUpsampleHead(BaseMaskRCNNHead, nn.Sequential):
         assert len(conv_dims) >= 1, "conv_dims have to be non-empty!"
 
         self.conv_norm_relus = []
+        self.spatial_attention = spatial_attention
 
         cur_channels = input_shape.channels
         for k, conv_dim in enumerate(conv_dims[:-1]):
@@ -236,9 +247,12 @@ class MaskRCNNConvUpsampleHead(BaseMaskRCNNHead, nn.Sequential):
             cur_channels = conv_dim
 
         self.deconv = ConvTranspose2d(
-            cur_channels, conv_dims[-1], kernel_size=2, stride=2, padding=0
+            cur_channels, 
+            conv_dims[-1], 
+            kernel_size=2, 
+            stride=2, 
+            padding=0
         )
-        self.add_module("deconv_relu", nn.ReLU())
         cur_channels = conv_dims[-1]
 
         self.predictor = Conv2d(cur_channels, num_classes, kernel_size=1, stride=1, padding=0)
@@ -267,6 +281,12 @@ class MaskRCNNConvUpsampleHead(BaseMaskRCNNHead, nn.Sequential):
         return ret
 
     def layers(self, x):
-        for layer in self:
+        for i, layer in enumerate(self.conv_norm_relus):
+            if (i > 0 and 
+                len(self.conv_norm_relus) // i == 2 and 
+                self.spatial_attention):
+                x = self.spatial_attention(x)
             x = layer(x)
-        return x
+        x_upscaled = F.relu_(self.deconv(x))
+        out = self.predictor(x_upscaled)
+        return out

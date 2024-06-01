@@ -19,6 +19,7 @@ from detectron2.modeling.meta_arch.dense_detector import permute_to_N_HWA_K  # n
 from ..box_ops import box_iou, generalized_box_iou
 from khang_net.modeling.nms import batched_nms
 from khang_net.modeling.postprocessing import detector_postprocess
+from khang_net.modeling.backbone import VoVNet, ResNet
 
 class YOLOF(nn.Module):
     """
@@ -125,8 +126,16 @@ class YOLOF(nn.Module):
         """
         images = self.preprocess_image(batched_inputs)
         features = self.backbone(images.tensor)
+
         # Temporarily hard code this feature out
-        features = features['res5']
+        if isinstance(self.backbone, VoVNet):
+            features = features['stage5']
+        elif isinstance(self.backbone, ResNet):
+            features = features['res5']
+        else:
+            print("Invalid type of backbone")
+            return
+
         features = [features]
         box_cls, box_delta = self.decoder(self.encoder(features[0]))
         anchors = self.anchor_generator(features)

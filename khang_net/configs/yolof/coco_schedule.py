@@ -17,28 +17,24 @@ def default_X_scheduler(num_X):
         DictConfig: configs that define the multiplier for LR during training
     """
     # total number of iterations assuming 16 batch size, using 1440000/16=90000
-    total_steps_16bs = num_X * 90000
-    max_iter =  90000 
+    #total_steps_16bs = num_X * 90000
+    total_steps_10bs = num_X * 90000 * 16 / 10
+
     warmup_iters = 1500
 
     if num_X <= 2:
         scheduler = L(MultiStepParamScheduler)(
-            #values=[1.0, 0.1, 0.01],
-            # note that scheduler is scale-invariant. This is equivalent to
-            # milestones=[6, 8, 9]
-            #milestones=[60000, 80000, max_iter],
-            
-            values=[1.0],
-            milestones=[max_iter],
+            values=[1.0, 0.1, 0.01],
+            milestones=[60000, 80000, total_steps_10bs],
         )
     else:
         scheduler = L(MultiStepParamScheduler)(
             values=[1.0, 0.1, 0.01],
-            milestones=[total_steps_16bs - 60000, total_steps_16bs - 20000, total_steps_16bs],
+            milestones=[total_steps_10bs - 60000, total_steps_10bs - 20000, total_steps_10bs],
         )
     return L(WarmupParamScheduler)(
         scheduler=scheduler,
-        warmup_length=warmup_iters / max_iter,
+        warmup_length=warmup_iters / total_steps_10bs,
         warmup_method="linear",
         warmup_factor=0.00066667
     )

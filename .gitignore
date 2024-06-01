@@ -1,5 +1,9 @@
 cityscapes
 output
 kitti
+coco2017
 
 output*
+results
+
+*.json

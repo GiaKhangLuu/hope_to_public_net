@@ -14,8 +14,8 @@ dataloader.train.dataset.names = ('coco2017_train', 'coco2017_val')
 dataloader.test.dataset.names = 'coco2017_val'
 
 train['output_dir'] = "./output_yolofmask_r_50_3x"
-train['max_iter'] = 90000 * 3 * default_batch_size / batch_size
-train['eval_period'] = 5000 * 3 * default_batch_size / batch_size
+train['max_iter'] = 90000 * 3 * default_batch_size // batch_size
+train['eval_period'] = 5000 * 3 * default_batch_size // batch_size
 train['best_checkpointer']['val_metric'] = "segm/AP50"
 train['init_checkpoint'] = "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
 train['device'] = 'cuda:0'

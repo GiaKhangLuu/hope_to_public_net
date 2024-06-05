@@ -25,19 +25,34 @@ def default_X_scheduler(num_X, batch_size_16=True):
     else:
         total_steps_based_on_batch_size = total_steps_10bs
 
-    warmup_iters = 1500
+    warmup_iters = 1500 if batch_size_16 else (1500 * 16 / 10)
 
     if num_X <= 2:
+
+        if batch_size_16:
+            milestones=[60000, 80000, total_steps_based_on_batch_size]
+        else:
+            milestones=[60000 * 16 / 10, 80000 * 16 / 10, total_steps_based_on_batch_size]
+
         scheduler = L(MultiStepParamScheduler)(
             values=[1.0, 0.1, 0.01],
-            milestones=[60000, 80000, total_steps_based_on_batch_size],
+            milestones=milestones
         )
     else:
-        scheduler = L(MultiStepParamScheduler)(
-            values=[1.0, 0.1, 0.01],
+        
+        if batch_size_16:
             milestones=[total_steps_based_on_batch_size - 60000, 
                         total_steps_based_on_batch_size - 20000, 
-                        total_steps_based_on_batch_size],
+                        total_steps_based_on_batch_size]
+        else:
+            milestones=[total_steps_based_on_batch_size - (60000 * 16 / 10),
+                        total_steps_based_on_batch_size - (20000 * 16 / 10),
+                        total_steps_based_on_batch_size
+            ]
+
+        scheduler = L(MultiStepParamScheduler)(
+            values=[1.0, 0.1, 0.01],
+            milestones=milestones
         )
     return L(WarmupParamScheduler)(
         scheduler=scheduler,
